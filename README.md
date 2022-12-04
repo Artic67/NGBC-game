@@ -1,2 +1,2 @@
 # NGBC-game
-This is my game for NGBC
+This is my game for "Nintendo Game Boy Color"
