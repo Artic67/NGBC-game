@@ -26,30 +26,6 @@
 /* Bank of tiles. */
 #define BGTilesBank 0
 
-/* Super Gameboy palette 0 */
-#define BGTilesSGBPal0c0 6076
-#define BGTilesSGBPal0c1 8935
-#define BGTilesSGBPal0c2 6596
-#define BGTilesSGBPal0c3 5344
-
-/* Super Gameboy palette 1 */
-#define BGTilesSGBPal1c0 6076
-#define BGTilesSGBPal1c1 8935
-#define BGTilesSGBPal1c2 6596
-#define BGTilesSGBPal1c3 5344
-
-/* Super Gameboy palette 2 */
-#define BGTilesSGBPal2c0 6076
-#define BGTilesSGBPal2c1 8935
-#define BGTilesSGBPal2c2 6596
-#define BGTilesSGBPal2c3 5344
-
-/* Super Gameboy palette 3 */
-#define BGTilesSGBPal3c0 6076
-#define BGTilesSGBPal3c1 8935
-#define BGTilesSGBPal3c2 6596
-#define BGTilesSGBPal3c3 5344
-
 /* Gameboy Color palette 0 */
 #define BGTilesCGBPal0c0 17969
 #define BGTilesCGBPal0c1 23254
@@ -80,23 +56,6 @@
 #define BGTilesCGBPal4c2 6596
 #define BGTilesCGBPal4c3 5344
 
-/* Gameboy Color palette 5 */
-#define BGTilesCGBPal5c0 6076
-#define BGTilesCGBPal5c1 8935
-#define BGTilesCGBPal5c2 6596
-#define BGTilesCGBPal5c3 5344
-
-/* Gameboy Color palette 6 */
-#define BGTilesCGBPal6c0 6076
-#define BGTilesCGBPal6c1 8935
-#define BGTilesCGBPal6c2 6596
-#define BGTilesCGBPal6c3 5344
-
-/* Gameboy Color palette 7 */
-#define BGTilesCGBPal7c0 6076
-#define BGTilesCGBPal7c1 8935
-#define BGTilesCGBPal7c2 6596
-#define BGTilesCGBPal7c3 5344
 /* CGBpalette entries. */
 extern unsigned char BGTilesCGB[];
 /* Start of tile array. */
