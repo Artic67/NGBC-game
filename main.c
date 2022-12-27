@@ -97,20 +97,12 @@ void newBlock(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint
     }
 }
 
-void newBlockL(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint8_t spriteNum, uint8_t charNumInSpritemap, uint8_t paletteNumber) {
-    uint8_t width = 32;
-    uint8_t height = 32;
-    uint8_t fallSpeed = 2;
-    newBlock(block, cl, x, y, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
-}
-
 void updateBlockSprite(HouseBlock* block, uint8_t charNumInSpritemap, uint8_t paletteNumber) {
     for(uint8_t i = 0; i < tilesInSprite; i++) {
         set_sprite_tile(block -> spriteIds[i], charNumInSpritemap * tilesInSprite + 2 * i);
         set_sprite_prop(block -> spriteIds[i], paletteNumber);
     }
 }
-
 
 UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
     CollisionArea* currArea = block -> area;
@@ -133,8 +125,31 @@ UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
 
 }
 
+void placeBlock() {
+    //fromSpriteToBG();
+    //changeBlock();
+}
+
+void changeFallSpeed(HouseBlock* block, int16_t fallSpeed) {
+    block->fallSpeed = fallSpeed;
+}
+
+HouseBlock* spawnBlock(uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
+    uint8_t startX = 72;
+    uint8_t startY = 50;
+    uint8_t width = 32;
+    uint8_t height = 32;
+    uint8_t fallSpeed = 0;
+
+    CollisionArea area = {startX, startX, width, height};
+    HouseBlock block;
+    newBlock(&block, &area, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
+    moveBlock(&block, block.posX, block.posY);
+}
+
 void fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
+        placeBlock();
         return;
     }
     block->posY += block->fallSpeed;
@@ -162,12 +177,9 @@ void main() {
     VBK_REG = VBK_BANK_0;
     set_bkg_tiles(0, 0, screen.width, screen.height, BGPLN0Start);
 
-    CollisionArea area = {72, 50, 32, 32};
-    HouseBlock genBlock;
-    newBlockL(&genBlock, &area, 72, 50, 0, 0, 0);
-    moveBlock(&genBlock, genBlock.posX, genBlock.posY);
+    CollisionArea ground = {40, 135, 96, 16};
 
-    CollisionArea area2 = {40, 135, 96, 16};
+    HouseBlock block = *spawnBlock(0, 0, 0);
 
     SHOW_BKG;
     SHOW_SPRITES;
@@ -175,15 +187,15 @@ void main() {
 
     while (1) {
         
-        fallBlock(&genBlock, &area2);
+        fallBlock(&block, &ground);
 
         if (joypad() & J_LEFT) {
-            genBlock.posX -= 2;
-            moveBlock(&genBlock, genBlock.posX, genBlock.posY);
+            block.posX -= 2;
+            moveBlock(&block, block.posX, block.posY);
         }
         if (joypad() & J_RIGHT) {
-            genBlock.posX += 2;
-            moveBlock(&genBlock, genBlock.posX, genBlock.posY);
+            block.posX += 2;
+            moveBlock(&block, block.posX, block.posY);
         }
         if (joypad() & J_UP) {
             moveScreenUp(&screen, 1);
