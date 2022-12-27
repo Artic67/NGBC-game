@@ -25,5 +25,7 @@
 #define BG BGPLN0
 extern unsigned char BGPLN0[];
 extern unsigned char BGPLN1[];
+extern unsigned char BGPLN0Start[];
+extern unsigned char BGPLN1Start[];
 
 /* End of BG.H */
