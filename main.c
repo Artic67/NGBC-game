@@ -9,9 +9,9 @@
 #include "./src/BGTiles.h"
 #include "./src/BGTilesPalette.c"
 
-HouseBlock block;
 UBYTE spriteSizeX = 8;
 UBYTE spriteSizeY = 16;
+uint16_t currentSpriteNum = 0;
 Screen screen = {20, 18, 0, 0, 32, 0};
 unsigned char buffArr0[20];
 unsigned char buffArr1[20];
@@ -82,6 +82,13 @@ void moveBlock(HouseBlock* block, uint8_t x, uint8_t y) {
     move_sprite(block -> spriteIds[7], x + 3 * spriteSizeX, y + spriteSizeY);
 }
 
+void newCollisionArea(CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, uint8_t height) {
+    cl->posX = x;
+    cl->posY = y;
+    cl->width = width;
+    cl->height = height;
+}
+
 void newBlock(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, uint8_t height, uint8_t spriteNum, uint8_t charNumInSpritemap, uint8_t paletteNumber, uint8_t fallSpeed) {
     block -> posX = x;
     block -> posY = y;
@@ -102,6 +109,22 @@ void updateBlockSprite(HouseBlock* block, uint8_t charNumInSpritemap, uint8_t pa
         set_sprite_tile(block -> spriteIds[i], charNumInSpritemap * tilesInSprite + 2 * i);
         set_sprite_prop(block -> spriteIds[i], paletteNumber);
     }
+}
+
+void copyBlock(HouseBlock* a, HouseBlock* b) {
+    b -> posX = a -> posX;
+    b -> posY = a -> posY;
+    b -> width = a -> width;
+    b -> heigth = a -> heigth;
+    b -> fallSpeed = a -> fallSpeed;
+    b -> area = a -> area;
+    for (int8_t i = 0; i < 8; i++) {
+        b -> spriteIds[i] = a -> spriteIds[i];
+    }
+}
+
+void changeFallSpeed(HouseBlock* block, int16_t fallSpeed) {
+    block->fallSpeed = fallSpeed;
 }
 
 UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
@@ -125,36 +148,31 @@ UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
 
 }
 
-void placeBlock() {
-    //fromSpriteToBG();
-    //changeBlock();
+void placeBlock(HouseBlock* block) {
+    changeFallSpeed(block, 0);
 }
 
-void changeFallSpeed(HouseBlock* block, int16_t fallSpeed) {
-    block->fallSpeed = fallSpeed;
-}
-
-HouseBlock* spawnBlock(uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
+void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
     uint8_t startX = 72;
     uint8_t startY = 50;
     uint8_t width = 32;
     uint8_t height = 32;
     uint8_t fallSpeed = 0;
 
-    CollisionArea area = {startX, startX, width, height};
-    HouseBlock block;
-    newBlock(&block, &area, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
-    moveBlock(&block, block.posX, block.posY);
+    newCollisionArea(cl, startX, startX, width, height);
+    newBlock(block, cl, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
+    moveBlock(block, block->posX, block->posY);
 }
 
-void fallBlock(HouseBlock* block, CollisionArea* lastArea) {
+UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
-        placeBlock();
-        return;
+        placeBlock(block);
+        return 1;
     }
     block->posY += block->fallSpeed;
     block->area->posY = block->posY;
     moveBlock(block, block->posX, block->posY);
+    return 0;
 }
 
 void main() {
@@ -179,7 +197,16 @@ void main() {
 
     CollisionArea ground = {40, 135, 96, 16};
 
-    HouseBlock block = *spawnBlock(0, 0, 0);
+    HouseBlock currentBlock;
+    CollisionArea area;
+    spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+
+    HouseBlock lastBlock;
+
+    //HouseBlock currentBlock;
+    //CollisionArea area = {72, 50, 32, 32};
+    //newBlock(&currentBlock, &area, 72, 50, 32, 32, 0, 0, 0, 0);
+    //moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
 
     SHOW_BKG;
     SHOW_SPRITES;
@@ -187,15 +214,24 @@ void main() {
 
     while (1) {
         
-        fallBlock(&block, &ground);
-
+        UBYTE blockGrounded = fallBlock(&currentBlock, &ground);
+        if (blockGrounded) {
+            copyBlock(&currentBlock, &lastBlock);
+            currentSpriteNum++;
+            spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+        }
+        if (joypad() & J_A) {
+            if (currentBlock.fallSpeed == 0) {
+                changeFallSpeed(&currentBlock, 3);
+            }
+        }
         if (joypad() & J_LEFT) {
-            block.posX -= 2;
-            moveBlock(&block, block.posX, block.posY);
+            currentBlock.posX -= 2;
+            moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
         }
         if (joypad() & J_RIGHT) {
-            block.posX += 2;
-            moveBlock(&block, block.posX, block.posY);
+            currentBlock.posX += 2;
+            moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
         }
         if (joypad() & J_UP) {
             moveScreenUp(&screen, 1);
