@@ -15,7 +15,9 @@ uint16_t currentSpriteNum = 0;
 Screen screen = {20, 18, 0, 0, 32, 0};
 unsigned char buffArr0[20];
 unsigned char buffArr1[20];
-const UBYTE moveBGFromBlock = 2;
+const UBYTE moveBGFromBlock = 3;
+UBYTE movingAllowed = 0;
+UBYTE startMoving = 0;
 
 
 void betterDelay(uint8_t numloops) {
@@ -185,6 +187,8 @@ void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16
 
 UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
+        //printf(" -%u- ", lastArea->posY + lastArea->height);
+
         //if (currentSpriteNum < 2) {
         //    printf("((%u>=%u&&%u<=%u+%u ", block->area->posX,lastArea->posX,block->area->posX,lastArea->posX,lastArea->width);
         //    printf("%u>=%u&&%u<=%u+%u))", block->area->posY,lastArea->posY,block->area->posY,lastArea->posY,lastArea->height);
@@ -241,9 +245,14 @@ void main() {
     HouseBlock currentBlock;
     CollisionArea area;
     spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+    currentSpriteNum++;
 
     HouseBlock lastBlock;
     UBYTE blocklastCollArea;
+
+    //HouseBlock preLastBlock;
+    //UBYTE prelastCollArea;
+
     uint8_t i;
 
     //HouseBlock currentBlock;
@@ -261,32 +270,49 @@ void main() {
         //printf("%u   %u   %u   %u   ", lastCollArea.posX, lastCollArea.posY, lastCollArea.height, lastCollArea.width);
         blocklastCollArea = fallBlock(&currentBlock, &lastCollArea);
         if (blocklastCollArea) {
-            if(currentSpriteNum < 3) {
-                currentSpriteNum++;
-                if (currentSpriteNum >= moveBGFromBlock) {
-                    for (i = 0; i < lastCollArea.height; i++) {
-                        moveScreenUp(&screen, 1);
-                        renderLine(&screen);
-                        currentBlock.posY += 1;
-                        currentBlock.area->posY = currentBlock.posY;
-                        moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
-                        lastBlock.posY += 1;
-                        lastBlock.area->posY = lastBlock.posY;
-                        moveBlock(&lastBlock, lastBlock.posX, lastBlock.posY);
-                    }
+            if (currentSpriteNum == 2) startMoving = 1;
+            if (currentSpriteNum == 3) movingAllowed = 1;
+            if (currentSpriteNum >= 3) currentSpriteNum = 0;
+            //printf("%u ", currentSpriteNum);
+            if (startMoving && !movingAllowed) {
+                for (i = 0; i < lastCollArea.height * 2; i++) {
+                    moveScreenUp(&screen, 1);
+                    renderLine(&screen);
+                    currentBlock.posY += 1;
+                    currentBlock.area->posY = currentBlock.posY;
+                    moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
+                    lastBlock.posY += 1; 
+                    lastBlock.area->posY = lastBlock.posY;
+                    moveBlock(&lastBlock, lastBlock.posX, lastBlock.posY);
+                    //printf("%u >>> ", lastBlock.area->posY + lastBlock.area->height);
                 }
-                copyBlock(&currentBlock, &lastBlock);
-                makeCollisionAreaFromBlock(&lastCollArea, &lastBlock);
-                spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
-                //printf("%u ", currentSpriteNum);
             }
+            else if (startMoving && movingAllowed) {
+                for (i = 0; i < lastCollArea.height; i++) {
+                    moveScreenUp(&screen, 1);
+                    renderLine(&screen);
+                    currentBlock.posY += 1;
+                    currentBlock.area->posY = currentBlock.posY;
+                    moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
+                    lastBlock.posY += 1; 
+                    lastBlock.area->posY = lastBlock.posY;
+                    moveBlock(&lastBlock, lastBlock.posX, lastBlock.posY);
+                    //printf("%u >>> ", lastBlock.area->posY + lastBlock.area->height);
+                }
+            }
+            copyBlock(&currentBlock, &lastBlock);
+            makeCollisionAreaFromBlock(&lastCollArea, &lastBlock);
+            lastBlock.area = &lastCollArea;
+            spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+            currentSpriteNum++;
+            //printf("%u ", currentSpriteNum);
             //
             
             
         }
         if (joypad() & J_A) {
             if (currentBlock.fallSpeed == 0) {
-                changeFallSpeed(&currentBlock, 3);
+                changeFallSpeed(&currentBlock, 1);
             }
         }
         if (joypad() & J_LEFT) {
@@ -301,7 +327,7 @@ void main() {
             moveScreenUp(&screen, 1);
             renderLine(&screen);
         }
-        betterDelay(3);
+        betterDelay(1);
     }
     
 }
