@@ -140,18 +140,8 @@ void changeFallSpeed(HouseBlock* block, int16_t fallSpeed) {
 
 UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
     CollisionArea* currArea = block -> area;
-
-    //if (currArea->height == lastArea->height && currArea->width == lastArea->width) {
-    //    return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
-    //            (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
-    //
-    //            // bot right corner check
-    //            (lastArea->posX >= currArea->posX && lastArea->posX <= currArea->posX + currArea->width) &&
-    //            (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height);
-    //}
-
+    
             // top left corner check
-            
     return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
             (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
 
