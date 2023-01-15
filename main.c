@@ -3,11 +3,14 @@
 #include <stdio.h>
 #include "./src/HouseBlock.c"
 #include "./src/Screen.c"
+#include "./src/Wire.c"
 #include "./src/BlockSpriteBlue.h"
 #include "./src/BlockSpriteBluePalette.c"
 #include "./src/BG.h"
 #include "./src/BGTiles.h"
 #include "./src/BGTilesPalette.c"
+#include "./src/Rope.h"
+#include "./src/RopePalette.c"
 
 UBYTE spriteSizeX = 8;
 UBYTE spriteSizeY = 16;
@@ -85,6 +88,11 @@ void moveBlock(HouseBlock* block, uint8_t x, uint8_t y) {
     move_sprite(block -> spriteIds[7], x + 3 * spriteSizeX, y + spriteSizeY);
 }
 
+void moveWire(Wire* wire, uint8_t x, uint8_t y) {
+    move_sprite(wire -> spriteIds[0], x, y);
+    move_sprite(wire -> spriteIds[1], x, y + spriteSizeY);
+}
+
 void newCollisionArea(CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, uint8_t height) {
     cl->posX = x;
     cl->posY = y;
@@ -100,16 +108,29 @@ void newBlock(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint
     block -> fallSpeed = fallSpeed;
     block -> area = cl;
 
-    for(uint8_t i = 0; i < tilesInSprite; i++) {
-        set_sprite_tile(spriteNum * tilesInSprite + i, charNumInSpritemap * tilesInSprite + 2 * i);
-        set_sprite_prop(spriteNum * tilesInSprite + i, paletteNumber);
-        block -> spriteIds[i] = spriteNum * tilesInSprite + i;
+    for(uint8_t i = 0; i < tilesInBlockSprite; i++) {
+        set_sprite_tile(spriteNum * tilesInBlockSprite + i, charNumInSpritemap * tilesInBlockSprite + 2 * i);
+        set_sprite_prop(spriteNum * tilesInBlockSprite + i, paletteNumber);
+        block -> spriteIds[i] = spriteNum * tilesInBlockSprite + i;
+    }
+}
+
+void newWire(Wire* wire, uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t spriteNumber, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
+    wire -> posX = x;
+    wire -> posY = y;
+    wire -> width = width;
+    wire -> height = height;
+
+    for(uint8_t i = 0; i < tilesInWireSprite; i++) {
+        set_sprite_tile(spriteNumber + i, charNumInSpritemap + tilesInWireSprite * i);
+        set_sprite_prop(spriteNumber + i, paletteNumber);
+        wire -> spriteIds[i] = spriteNumber + i;
     }
 }
 
 void updateBlockSprite(HouseBlock* block, uint8_t charNumInSpritemap, uint8_t paletteNumber) {
-    for(uint8_t i = 0; i < tilesInSprite; i++) {
-        set_sprite_tile(block -> spriteIds[i], charNumInSpritemap * tilesInSprite + 2 * i);
+    for(uint8_t i = 0; i < tilesInBlockSprite; i++) {
+        set_sprite_tile(block -> spriteIds[i], charNumInSpritemap * tilesInBlockSprite + 2 * i);
         set_sprite_prop(block -> spriteIds[i], paletteNumber);
     }
 }
@@ -165,7 +186,7 @@ void placeBlock(HouseBlock* block) {
 
 void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
     uint8_t startX = 72;
-    uint8_t startY = 50;
+    uint8_t startY = 48;
     uint8_t width = 32;
     uint8_t height = 32;
     uint8_t fallSpeed = 0;
@@ -173,6 +194,16 @@ void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16
     newCollisionArea(cl, startX, startY, width, height);
     newBlock(block, cl, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
     moveBlock(block, block->posX, block->posY);
+}
+
+void spawnWire(Wire* wire, uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
+    uint8_t startX = 84;
+    uint8_t startY = 16;
+    uint8_t width = 8;
+    uint8_t height = 32;
+
+    newWire(wire, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber);
+    moveWire(wire, wire->posX, wire->posY);
 }
 
 UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
@@ -215,8 +246,10 @@ void main() {
     SPRITES_8x16;
 
     set_sprite_palette(0, 1, spritepalette);
+    set_sprite_palette(4, 1, ropepalette);
 
     set_sprite_data(0, 16, BlockSpriteBlue);
+    set_sprite_data(48, 4, Rope);
 
     set_bkg_palette(0, 5, BGPalette);
 
@@ -239,6 +272,11 @@ void main() {
 
     HouseBlock lastBlock;
     UBYTE blocklastCollArea;
+
+    Wire mainWire;
+    spawnWire(&mainWire, 38, 48, 4);
+
+    
 
     //HouseBlock preLastBlock;
     //UBYTE prelastCollArea;
@@ -294,6 +332,9 @@ void main() {
             makeCollisionAreaFromBlock(&lastCollArea, &lastBlock);
             lastBlock.area = &lastCollArea;
             spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+            mainWire.posX = 84;
+            mainWire.posY = 16;
+            moveWire(&mainWire, mainWire.posX, mainWire.posY);
             currentSpriteNum++;
             //printf("%u ", currentSpriteNum);
             //
@@ -305,12 +346,16 @@ void main() {
                 changeFallSpeed(&currentBlock, 1);
             }
         }
-        if (joypad() & J_LEFT) {
+        if (joypad() & J_LEFT && currentBlock.fallSpeed == 0) {
             currentBlock.posX -= 2;
+            mainWire.posX -= 2;
+            moveWire(&mainWire, mainWire.posX, mainWire. posY);
             moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
         }
-        if (joypad() & J_RIGHT) {
+        if (joypad() & J_RIGHT && currentBlock.fallSpeed == 0) {
             currentBlock.posX += 2;
+            mainWire.posX += 2;
+            moveWire(&mainWire, mainWire.posX, mainWire. posY);
             moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
         }
         if (joypad() & J_UP) {
