@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include "CollisionArea.c"
 
-const uint8_t tilesInSprite = 8;
+const uint8_t tilesInBlockSprite = 8;
 typedef struct HouseBlock {
     UBYTE spriteIds[8];
     uint16_t posX;
