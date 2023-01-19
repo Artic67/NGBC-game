@@ -188,24 +188,33 @@ void changeMoveSpeedX(HouseBlock* block, int16_t moveSpeedX) {
     block->moveSpeedX = moveSpeedX;
 }
 
-UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
-    CollisionArea* currArea = block -> area;
+UBYTE blocksColiding(HouseBlock* block, CollisionArea* B) {
+    CollisionArea* A = block -> area;
     
+            // bot right
+    return  (A->posX + A->width >= B->posX && A->posX + A->width <= B->posX + B->width) && (A->posY + A->height >= B->posY && A->posY + A->height <= B->posY + B->height) ||
+            // bot left
+            (A->posX >= B->posX && A->posX <= B->posX + B->width) && (A->posY + A->height >= B->posY && A->posY + A->height <= B->posY + B->height) ||
+            // top left
+            (A->posX >= B->posX && A->posX <= B->posX + B->width) && (A->posY >= B->posY && A->posY <= B->posY + B->height) ||
+            // top right
+            (A->posX + A->width >= B->posX && A->posX + A->width <= B->posX + B->width) && (A->posY >= B->posY && A->posY <= B->posY + B->height);
+
             // top left corner check
-    return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
-            (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
+    //return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
+    //        (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
 
             // bot right corner check
-            (lastArea->posX >= currArea->posX && lastArea->posX <= currArea->posX + currArea->width) &&
-            (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height) ||
+    //        (lastArea->posX >= currArea->posX && lastArea->posX <= currArea->posX + currArea->width) &&
+    //        (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height) ||
 
             // top right left corner check
-            (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
-            (currArea->posY + currArea->height >= lastArea->posY && currArea->posY + currArea->height <= lastArea->posY + lastArea->height) ||
+    //        (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
+    //        (currArea->posY + currArea->height >= lastArea->posY && currArea->posY + currArea->height <= lastArea->posY + lastArea->height) ||
             
             // bot left corner check
-            (lastArea->posX + lastArea->width >= currArea->posX && lastArea->posX + lastArea->width <= currArea->posX + currArea->width) &&
-            (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height);
+    //        (lastArea->posX + lastArea->width >= currArea->posX && lastArea->posX + lastArea->width <= currArea->posX + currArea->width) &&
+    //        (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height);
 
 }
 
@@ -246,6 +255,12 @@ void spawnWire(Wire* wire, uint16_t spriteNum, uint16_t charNumInSpritemap, uint
 
 UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
+
+        printf("X: %u + %u >= %u && %u + %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, block->area->width, lastArea->posX, block->area->posX, block->area->width, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        printf("X: %u >= %u && %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, lastArea->posX, block->area->posX, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        //printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
+        //printf("<<%u>>", (block->area->posX + block->area->width >= lastArea->posX && block->area->posX + block->area->width <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
+
         //printf(" -%u- ", lastArea->posY + lastArea->height);
 
         //if (currentSpriteNum < 2) {
