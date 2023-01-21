@@ -256,35 +256,14 @@ void spawnWire(Wire* wire, uint16_t spriteNum, uint16_t charNumInSpritemap, uint
 UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
 
-        printf("X: %u + %u >= %u && %u + %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, block->area->width, lastArea->posX, block->area->posX, block->area->width, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
-        printf("X: %u >= %u && %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, lastArea->posX, block->area->posX, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        //printf("X: %u + %u >= %u && %u + %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, block->area->width, lastArea->posX, block->area->posX, block->area->width, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        //printf("X: %u >= %u && %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, lastArea->posX, block->area->posX, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        
         //printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
         //printf("<<%u>>", (block->area->posX + block->area->width >= lastArea->posX && block->area->posX + block->area->width <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
 
         //printf(" -%u- ", lastArea->posY + lastArea->height);
 
-        //if (currentSpriteNum < 2) {
-        //    printf("((%u>=%u&&%u<=%u+%u ", block->area->posX,lastArea->posX,block->area->posX,lastArea->posX,lastArea->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", block->area->posY,lastArea->posY,block->area->posY,lastArea->posY,lastArea->height);
-
-        //    printf("((%u>=%u&&%u<=%u+%u ", lastArea->posX,block->area->posX,lastArea->posX,block->area->posX,block->area->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", lastArea->posY,block->area->posY,lastArea->posY,block->area->posY,block->area->height);
-
-        //    printf("((%u>=%u&&%u<=%u+%u ", block->area->posX,lastArea->posX,block->area->posX,lastArea->posX,lastArea->width);
-        //    printf("%u+%u>=%u&&%u+%u<=%u+%u))", block->area->posY,block->area->height,lastArea->posY,block->area->posY,block->area->height,lastArea->posY,lastArea->height);
-
-        //    printf("((%u+%u>=%u&&%u+%u<=%u+%u ", lastArea->posX + lastArea->width >= block->area->posX && lastArea->posX + lastArea->width <= block->area->posX + block->area->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", lastArea->posY,block->area->posY,lastArea->posY,block->area->posY,block->area->height);
-
-        //    printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) &&
-        //        (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
-        //    printf("<<%u>>", (lastArea->posX >= block->area->posX && lastArea->posX <= block->area->posX + block->area->width) &&
-        //        (lastArea->posY >= block->area->posY && lastArea->posY <= block->area->posY + block->area->height));
-        //    printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) &&
-        //        (block->area->posY + block->area->height >= lastArea->posY && block->area->posY + block->area->height <= lastArea->posY + lastArea->height));
-        //    printf("<<%u>>", (lastArea->posX + lastArea->width >= block->area->posX && lastArea->posX + lastArea->width <= block->area->posX + block->area->width) &&
-        //        (lastArea->posY >= block->area->posY && lastArea->posY <= block->area->posY + block->area->height));
-        //}
         placeBlock(block);
         return 1;
     }
@@ -349,6 +328,7 @@ void main() {
         //printf("%u   %u   %u   %u   ", lastCollArea.posX, lastCollArea.posY, lastCollArea.height, lastCollArea.width);
         blocklastCollArea = fallBlock(&currentBlock, &lastCollArea);
         if (blocklastCollArea) {
+            //printf("%u ", currentBlock.posX);
             blockCount++;
             if (currentSpriteNum == 2) startMoving = 1;
             if (currentSpriteNum == 3) movingAllowed = 1;
@@ -402,6 +382,7 @@ void main() {
                 currentBlock.moveSpeedX = -currentBlock.moveSpeedX;
             }
             currentBlock.posX += currentBlock.moveSpeedX;
+            currentBlock.area->posX = currentBlock.posX;
             mainWire.posX += currentBlock.moveSpeedX;
             moveWire(&mainWire, mainWire.posX, mainWire. posY);
             moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
