@@ -12,15 +12,30 @@
 #include "./src/Rope.h"
 #include "./src/RopePalette.c"
 
+const uint8_t MIN_BLOCK_X = 20;
+const uint8_t MAX_BLOCK_X = 60 + 96 - 32;
+const UBYTE moveBGFromBlock = 3;
+
+const uint16_t speedToBlockCount[8] = {
+    10,
+    20,
+    50,
+    100,
+    200,
+    500,
+    1000,
+    2000
+};
+
+int16_t blockCount = 0;
+UBYTE movingAllowed = 0;
+UBYTE startMoving = 0;
 UBYTE spriteSizeX = 8;
 UBYTE spriteSizeY = 16;
 uint16_t currentSpriteNum = 0;
 Screen screen = {20, 18, 0, 0, 32, 0};
 unsigned char buffArr0[20];
 unsigned char buffArr1[20];
-const UBYTE moveBGFromBlock = 3;
-UBYTE movingAllowed = 0;
-UBYTE startMoving = 0;
 
 
 void betterDelay(uint8_t numloops) {
@@ -28,7 +43,15 @@ void betterDelay(uint8_t numloops) {
     for(i = 0; i < numloops; i++) {
         wait_vbl_done();
     }
+}
 
+int16_t calculateMoveSpeedX(uint16_t stbc[], uint16_t blocksCount) {
+    for (uint8_t i = 0; i < 8; i++) {
+        if (blocksCount < stbc[i]) {
+            return i + 1;
+        }
+    }
+    return 8;
 }
 
 void moveScreenUp(Screen* scr, int16_t y) {
@@ -100,12 +123,13 @@ void newCollisionArea(CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, 
     cl->height = height;
 }
 
-void newBlock(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, uint8_t height, uint8_t spriteNum, uint8_t charNumInSpritemap, uint8_t paletteNumber, uint8_t fallSpeed) {
+void newBlock(HouseBlock* block, CollisionArea* cl, uint16_t x, uint16_t y, uint8_t width, uint8_t height, uint8_t spriteNum, uint8_t charNumInSpritemap, uint8_t paletteNumber, uint8_t fallSpeed, int8_t moveSpeedX) {
     block -> posX = x;
     block -> posY = y;
     block -> width = width;
     block -> height = height;
     block -> fallSpeed = fallSpeed;
+    block -> moveSpeedX = moveSpeedX;
     block -> area = cl;
 
     for(uint8_t i = 0; i < tilesInBlockSprite; i++) {
@@ -141,6 +165,7 @@ void copyBlock(HouseBlock* a, HouseBlock* b) {
     b -> width = a -> width;
     b -> height = a -> height;
     b -> fallSpeed = a -> fallSpeed;
+    b -> moveSpeedX = a -> moveSpeedX;
     b -> area = a -> area;
     for (int8_t i = 0; i < 8; i++) {
         b -> spriteIds[i] = a -> spriteIds[i];
@@ -159,32 +184,54 @@ void changeFallSpeed(HouseBlock* block, int16_t fallSpeed) {
     block->fallSpeed = fallSpeed;
 }
 
-UBYTE blocksColiding(HouseBlock* block, CollisionArea* lastArea) {
-    CollisionArea* currArea = block -> area;
+void changeMoveSpeedX(HouseBlock* block, int16_t moveSpeedX) {
+    block->moveSpeedX = moveSpeedX;
+}
+
+UBYTE blocksColiding(HouseBlock* block, CollisionArea* B) {
+    CollisionArea* A = block -> area;
     
+            // bot right
+    return  (A->posX + A->width >= B->posX && A->posX + A->width <= B->posX + B->width) && (A->posY + A->height >= B->posY && A->posY + A->height <= B->posY + B->height) ||
+            // bot left
+            (A->posX >= B->posX && A->posX <= B->posX + B->width) && (A->posY + A->height >= B->posY && A->posY + A->height <= B->posY + B->height) ||
+            // top left
+            (A->posX >= B->posX && A->posX <= B->posX + B->width) && (A->posY >= B->posY && A->posY <= B->posY + B->height) ||
+            // top right
+            (A->posX + A->width >= B->posX && A->posX + A->width <= B->posX + B->width) && (A->posY >= B->posY && A->posY <= B->posY + B->height);
+
             // top left corner check
-    return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
-            (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
+    //return  (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
+    //        (currArea->posY >= lastArea->posY && currArea->posY <= lastArea->posY + lastArea->height) ||
 
             // bot right corner check
-            (lastArea->posX >= currArea->posX && lastArea->posX <= currArea->posX + currArea->width) &&
-            (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height) ||
+    //        (lastArea->posX >= currArea->posX && lastArea->posX <= currArea->posX + currArea->width) &&
+    //        (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height) ||
 
             // top right left corner check
-            (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
-            (currArea->posY + currArea->height >= lastArea->posY && currArea->posY + currArea->height <= lastArea->posY + lastArea->height) ||
+    //        (currArea->posX >= lastArea->posX && currArea->posX <= lastArea->posX + lastArea->width) &&
+    //        (currArea->posY + currArea->height >= lastArea->posY && currArea->posY + currArea->height <= lastArea->posY + lastArea->height) ||
             
             // bot left corner check
-            (lastArea->posX + lastArea->width >= currArea->posX && lastArea->posX + lastArea->width <= currArea->posX + currArea->width) &&
-            (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height);
+    //        (lastArea->posX + lastArea->width >= currArea->posX && lastArea->posX + lastArea->width <= currArea->posX + currArea->width) &&
+    //        (lastArea->posY >= currArea->posY && lastArea->posY <= currArea->posY + currArea->height);
 
 }
 
 void placeBlock(HouseBlock* block) {
     changeFallSpeed(block, 0);
+    changeMoveSpeedX(block, 0);
 }
 
-void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
+UBYTE checkXBorders(HouseBlock* block) {
+    //printf("%u < %u || %u > %u ", block->posX + block->moveSpeedX,MAX_BLOCK_X, block->posX + block->moveSpeedX, MIN_BLOCK_X);
+    if (block->posX + block->moveSpeedX > MAX_BLOCK_X || block->posX + block->moveSpeedX < MIN_BLOCK_X) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+void spawnBlock(HouseBlock* block, CollisionArea* cl, int8_t moveSpeedX, uint16_t spriteNum, uint16_t charNumInSpritemap, uint16_t paletteNumber) {
     uint8_t startX = 72;
     uint8_t startY = 48;
     uint8_t width = 32;
@@ -192,7 +239,7 @@ void spawnBlock(HouseBlock* block, CollisionArea* cl, uint16_t spriteNum, uint16
     uint8_t fallSpeed = 0;
 
     newCollisionArea(cl, startX, startY, width, height);
-    newBlock(block, cl, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed);
+    newBlock(block, cl, startX, startY, width, height, spriteNum, charNumInSpritemap, paletteNumber, fallSpeed, moveSpeedX);
     moveBlock(block, block->posX, block->posY);
 }
 
@@ -208,30 +255,15 @@ void spawnWire(Wire* wire, uint16_t spriteNum, uint16_t charNumInSpritemap, uint
 
 UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     if (blocksColiding(block, lastArea)) {
+
+        //printf("X: %u + %u >= %u && %u + %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, block->area->width, lastArea->posX, block->area->posX, block->area->width, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        //printf("X: %u >= %u && %u <= %u + %u \nY: %u + %u >= %u && %u + %u <= %u + %u ", block->area->posX, lastArea->posX, block->area->posX, lastArea->posX, lastArea->width, block->area->posY, block->area->height, lastArea->posY, block->area->posY, block->area->height, lastArea->posY, lastArea->height);
+        
+        //printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
+        //printf("<<%u>>", (block->area->posX + block->area->width >= lastArea->posX && block->area->posX + block->area->width <= lastArea->posX + lastArea->width) && (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
+
         //printf(" -%u- ", lastArea->posY + lastArea->height);
 
-        //if (currentSpriteNum < 2) {
-        //    printf("((%u>=%u&&%u<=%u+%u ", block->area->posX,lastArea->posX,block->area->posX,lastArea->posX,lastArea->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", block->area->posY,lastArea->posY,block->area->posY,lastArea->posY,lastArea->height);
-
-        //    printf("((%u>=%u&&%u<=%u+%u ", lastArea->posX,block->area->posX,lastArea->posX,block->area->posX,block->area->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", lastArea->posY,block->area->posY,lastArea->posY,block->area->posY,block->area->height);
-
-        //    printf("((%u>=%u&&%u<=%u+%u ", block->area->posX,lastArea->posX,block->area->posX,lastArea->posX,lastArea->width);
-        //    printf("%u+%u>=%u&&%u+%u<=%u+%u))", block->area->posY,block->area->height,lastArea->posY,block->area->posY,block->area->height,lastArea->posY,lastArea->height);
-
-        //    printf("((%u+%u>=%u&&%u+%u<=%u+%u ", lastArea->posX + lastArea->width >= block->area->posX && lastArea->posX + lastArea->width <= block->area->posX + block->area->width);
-        //    printf("%u>=%u&&%u<=%u+%u))", lastArea->posY,block->area->posY,lastArea->posY,block->area->posY,block->area->height);
-
-        //    printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) &&
-        //        (block->area->posY >= lastArea->posY && block->area->posY <= lastArea->posY + lastArea->height));
-        //    printf("<<%u>>", (lastArea->posX >= block->area->posX && lastArea->posX <= block->area->posX + block->area->width) &&
-        //        (lastArea->posY >= block->area->posY && lastArea->posY <= block->area->posY + block->area->height));
-        //    printf("<<%u>>", (block->area->posX >= lastArea->posX && block->area->posX <= lastArea->posX + lastArea->width) &&
-        //        (block->area->posY + block->area->height >= lastArea->posY && block->area->posY + block->area->height <= lastArea->posY + lastArea->height));
-        //    printf("<<%u>>", (lastArea->posX + lastArea->width >= block->area->posX && lastArea->posX + lastArea->width <= block->area->posX + block->area->width) &&
-        //        (lastArea->posY >= block->area->posY && lastArea->posY <= block->area->posY + block->area->height));
-        //}
         placeBlock(block);
         return 1;
     }
@@ -267,7 +299,7 @@ void main() {
 
     HouseBlock currentBlock;
     CollisionArea area;
-    spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+    spawnBlock(&currentBlock, &area, calculateMoveSpeedX(speedToBlockCount, blockCount), currentSpriteNum, 0, 0);
     currentSpriteNum++;
 
     HouseBlock lastBlock;
@@ -275,8 +307,6 @@ void main() {
 
     Wire mainWire;
     spawnWire(&mainWire, 38, 48, 4);
-
-    
 
     //HouseBlock preLastBlock;
     //UBYTE prelastCollArea;
@@ -298,6 +328,8 @@ void main() {
         //printf("%u   %u   %u   %u   ", lastCollArea.posX, lastCollArea.posY, lastCollArea.height, lastCollArea.width);
         blocklastCollArea = fallBlock(&currentBlock, &lastCollArea);
         if (blocklastCollArea) {
+            //printf("%u ", currentBlock.posX);
+            blockCount++;
             if (currentSpriteNum == 2) startMoving = 1;
             if (currentSpriteNum == 3) movingAllowed = 1;
             if (currentSpriteNum >= 3) currentSpriteNum = 0;
@@ -331,37 +363,36 @@ void main() {
             copyBlock(&currentBlock, &lastBlock);
             makeCollisionAreaFromBlock(&lastCollArea, &lastBlock);
             lastBlock.area = &lastCollArea;
-            spawnBlock(&currentBlock, &area, currentSpriteNum, 0, 0);
+            spawnBlock(&currentBlock, &area, calculateMoveSpeedX(speedToBlockCount, blockCount), currentSpriteNum, 0, 0);
             mainWire.posX = 84;
             mainWire.posY = 16;
             moveWire(&mainWire, mainWire.posX, mainWire.posY);
             currentSpriteNum++;
             //printf("%u ", currentSpriteNum);
-            //
-            
-            
         }
         if (joypad() & J_A) {
             if (currentBlock.fallSpeed == 0) {
                 changeFallSpeed(&currentBlock, 1);
             }
         }
-        if (joypad() & J_LEFT && currentBlock.fallSpeed == 0) {
-            currentBlock.posX -= 2;
-            mainWire.posX -= 2;
+
+        if(currentBlock.fallSpeed == 0) {
+            UBYTE blockInBorders = checkXBorders(&currentBlock);
+            if (!blockInBorders) {
+                currentBlock.moveSpeedX = -currentBlock.moveSpeedX;
+            }
+            currentBlock.posX += currentBlock.moveSpeedX;
+            currentBlock.area->posX = currentBlock.posX;
+            mainWire.posX += currentBlock.moveSpeedX;
             moveWire(&mainWire, mainWire.posX, mainWire. posY);
             moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
         }
-        if (joypad() & J_RIGHT && currentBlock.fallSpeed == 0) {
-            currentBlock.posX += 2;
-            mainWire.posX += 2;
-            moveWire(&mainWire, mainWire.posX, mainWire. posY);
-            moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
-        }
-        if (joypad() & J_UP) {
-            moveScreenUp(&screen, 1);
-            renderLine(&screen);
-        }
+
+        //if (joypad() & J_UP) {
+        //    moveScreenUp(&screen, 1);
+        //    renderLine(&screen);
+        //}
+
         betterDelay(1);
     }
     

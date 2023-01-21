@@ -8,6 +8,7 @@ typedef struct HouseBlock {
     uint16_t posY;
     uint16_t width;
     uint16_t height;
-    uint8_t fallSpeed;
+    int8_t fallSpeed;
+    int8_t moveSpeedX;
     CollisionArea* area;
 } HouseBlock;
