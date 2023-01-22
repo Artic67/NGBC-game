@@ -1,12 +1,14 @@
 #include <gb/gb.h>
 #include <gb/cgb.h>
+#include <gbdk/font.h>
 #include <stdio.h>
 #include "./src/HouseBlock.c"
 #include "./src/Screen.c"
 #include "./src/Wire.c"
 #include "./src/BlockSpriteBlue.h"
 #include "./src/BlockSpriteBluePalette.c"
-#include "./src/BG.h"
+#include "./src/BGWOffset.h"
+#include "./src/WindowMap.h"
 #include "./src/BGTiles.h"
 #include "./src/BGTilesPalette.c"
 #include "./src/Rope.h"
@@ -267,6 +269,11 @@ UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
         placeBlock(block);
         return 1;
     }
+    
+    if (block->posY + block->height > lastArea->posY + lastArea->height/2) {
+        return 2;
+    }
+
     block->posY += block->fallSpeed;
     block->area->posY = block->posY;
     moveBlock(block, block->posX, block->posY);
@@ -274,6 +281,12 @@ UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
 }
 
 void main() {
+
+    font_t min_font;
+
+    font_init();
+    min_font = font_load(font_min);
+    font_set(min_font);
 
     SPRITES_8x16;
 
@@ -285,7 +298,7 @@ void main() {
 
     set_bkg_palette(0, 5, BGPalette);
 
-    set_bkg_data(0, 31, BGTiles);
+    set_bkg_data(37, 31, BGTiles);
     
 
 
@@ -294,6 +307,10 @@ void main() {
 
     VBK_REG = VBK_BANK_0;
     set_bkg_tiles(0, 0, screen.width, screen.height, BGPLN0Start);
+
+
+    set_win_tiles(0, 0, 7, 1, windowMap);
+    move_win(7, 130);
 
     CollisionArea lastCollArea = {40, 135, 96, 16};
 
@@ -319,6 +336,7 @@ void main() {
     //moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
 
     SHOW_BKG;
+    SHOW_WIN;
     SHOW_SPRITES;
     DISPLAY_ON;
 
@@ -327,7 +345,10 @@ void main() {
         //printf("%u   %u   %u   %u   ", currentBlock.posX, currentBlock.posY, currentBlock.height, currentBlock.width);
         //printf("%u   %u   %u   %u   ", lastCollArea.posX, lastCollArea.posY, lastCollArea.height, lastCollArea.width);
         blocklastCollArea = fallBlock(&currentBlock, &lastCollArea);
-        if (blocklastCollArea) {
+        if (blocklastCollArea == 2) {
+            break;
+        }
+        if (blocklastCollArea == 1) {
             //printf("%u ", currentBlock.posX);
             blockCount++;
             if (currentSpriteNum == 2) startMoving = 1;
@@ -395,5 +416,7 @@ void main() {
 
         betterDelay(1);
     }
+
+    printf("GAME OVER");
     
 }
