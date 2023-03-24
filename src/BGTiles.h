@@ -56,6 +56,12 @@
 #define BGTilesCGBPal4c2 6596
 #define BGTilesCGBPal4c3 5344
 
+/* Gameboy Color palette 5 */
+#define BGTilesCGBPal5c0 18397
+#define BGTilesCGBPal5c1 925
+#define BGTilesCGBPal5c2 726
+#define BGTilesCGBPal5c3 1189
+
 /* CGBpalette entries. */
 extern unsigned char BGTilesCGB[];
 /* Start of tile array. */

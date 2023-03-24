@@ -18,15 +18,29 @@ const uint8_t MIN_BLOCK_X = 20;
 const uint8_t MAX_BLOCK_X = 60 + 96 - 32;
 const UBYTE moveBGFromBlock = 3;
 
-const uint16_t speedToBlockCount[8] = {
+const uint16_t speedToBlockCount[9] = {
+    1,
     10,
     20,
+    30,
     50,
     100,
     200,
     500,
-    1000,
-    2000
+    1000
+};
+
+const char graphicalNums[10] = {
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08,
+    0x09,
+    0x0A
 };
 
 int16_t blockCount = 0;
@@ -38,7 +52,9 @@ uint16_t currentSpriteNum = 0;
 Screen screen = {20, 18, 0, 0, 32, 0};
 unsigned char buffArr0[20];
 unsigned char buffArr1[20];
+int8_t gameCount;
 
+unsigned char graphicalScore[5];
 
 void betterDelay(uint8_t numloops) {
     uint8_t i;
@@ -48,12 +64,12 @@ void betterDelay(uint8_t numloops) {
 }
 
 int16_t calculateMoveSpeedX(uint16_t stbc[], uint16_t blocksCount) {
-    for (uint8_t i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 9; i++) {
         if (blocksCount < stbc[i]) {
-            return i + 1;
+            return i;
         }
     }
-    return 8;
+    return 9;
 }
 
 void moveScreenUp(Screen* scr, int16_t y) {
@@ -280,6 +296,23 @@ UBYTE fallBlock(HouseBlock* block, CollisionArea* lastArea) {
     return 0;
 }
 
+uint8_t countDigits(uint16_t n) {
+    if (n < 10) return 1;
+    return 1 + countDigits(n / 10);
+}
+void setGraphicalNumber(uint8_t n) {
+    uint8_t count = countDigits(n);
+    for (uint8_t i = count; i > 0; i--) {
+        uint8_t digit = n % 10;
+        graphicalScore[i-1] =  graphicalNums[digit];
+        n = n / 10;
+    }
+}
+
+void interruptLCD() {
+    HIDE_WIN;
+}
+
 void main() {
 
     font_t min_font;
@@ -296,7 +329,7 @@ void main() {
     set_sprite_data(0, 16, BlockSpriteBlue);
     set_sprite_data(48, 4, Rope);
 
-    set_bkg_palette(0, 5, BGPalette);
+    set_bkg_palette(0, 6, BGPalette);
 
     set_bkg_data(37, 31, BGTiles);
     
@@ -308,9 +341,8 @@ void main() {
     VBK_REG = VBK_BANK_0;
     set_bkg_tiles(0, 0, screen.width, screen.height, BGPLN0Start);
 
-
-    set_win_tiles(0, 0, 7, 1, windowMap);
-    move_win(7, 130);
+    set_win_tiles(0, 0, 16, 1, windowMap);
+    //scroll_win(0, -10);
 
     CollisionArea lastCollArea = {40, 135, 96, 16};
 
@@ -335,12 +367,25 @@ void main() {
     //newBlock(&currentBlock, &area, 72, 50, 32, 32, 0, 0, 0, 0);
     //moveBlock(&currentBlock, currentBlock.posX, currentBlock.posY);
 
-    SHOW_BKG;
+    STAT_REG = 0x45;
+    LYC_REG = 0x08;
+
+    disable_interrupts();
+
     SHOW_WIN;
     SHOW_SPRITES;
+    SHOW_BKG;
+
+    add_LCD(interruptLCD);
+    enable_interrupts();
+
+    set_interrupts(VBL_IFLAG | LCD_IFLAG);
+
     DISPLAY_ON;
+    gameCount = 0;
 
     while (1) {
+        SHOW_WIN;
         
         //printf("%u   %u   %u   %u   ", currentBlock.posX, currentBlock.posY, currentBlock.height, currentBlock.width);
         //printf("%u   %u   %u   %u   ", lastCollArea.posX, lastCollArea.posY, lastCollArea.height, lastCollArea.width);
@@ -388,6 +433,10 @@ void main() {
             mainWire.posX = 84;
             mainWire.posY = 16;
             moveWire(&mainWire, mainWire.posX, mainWire.posY);
+            gameCount++;
+            setGraphicalNumber(gameCount);
+            //printf(graphicalScore[0]);
+            set_win_tiles(6, 0, 5, 1, graphicalScore);
             currentSpriteNum++;
             //printf("%u ", currentSpriteNum);
         }
